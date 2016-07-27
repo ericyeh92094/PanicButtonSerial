@@ -260,6 +260,8 @@ namespace PanicButtonSerial
 
             string PortName = SerialPort.GetPortNames()[0]; // get the first free com port
             PortName = EnumPorts();
+            if (PortName == "") // no port exist, abort the program
+                System.Environment.Exit(0);
  
             _serialPort.PortName = PortName;
             _serialPort.BaudRate = 9600;
@@ -290,10 +292,19 @@ namespace PanicButtonSerial
         }
         static void Main(string[] args)
         {
+            // Command line parsing
+            Arguments CommandLine = new Arguments(args);
+
+            if (CommandLine["deviceid"] != null)
+            {
+                Console.WriteLine("Device ID: " + CommandLine["deviceid"]);
+                if (int.Parse(CommandLine["deviceid"]) > 0)
+                    monitorId = CommandLine["deviceid"];
+            }
+         
             GeoCoordinateWatcher watcher = new GeoCoordinateWatcher();
             watcher.PositionChanged +=
-                new EventHandler<GeoPositionChangedEventArgs<
-                    GeoCoordinate>>(GeoPositionChanged);
+                new EventHandler<GeoPositionChangedEventArgs<GeoCoordinate>>(GeoPositionChanged);
 
             watcher.Start();
 
