@@ -8,6 +8,8 @@ using System.Device.Location;
 using System.Runtime.InteropServices;
 using System.IO.Ports;
 using System.Threading;
+using System.Management;
+
 
 namespace PanicButtonSerial
 {
@@ -204,6 +206,49 @@ namespace PanicButtonSerial
             }
         }
 
+        public static string EnumPorts()
+        {
+            string namePort = "";
+            //Below is code pasted from WMICodeCreator
+            try
+            {
+                ManagementObjectSearcher searcher =
+                    new ManagementObjectSearcher("root\\WMI",
+                    "SELECT * FROM MSSerial_PortName");
+
+                foreach (ManagementObject queryObj in searcher.Get())
+                {
+                    Console.WriteLine("-----------------------------------");
+                    Console.WriteLine("MSSerial_PortName instance");
+                    Console.WriteLine("-----------------------------------");
+                    Console.WriteLine("InstanceName: {0}", queryObj["InstanceName"]);
+
+                    Console.WriteLine("-----------------------------------");
+                    Console.WriteLine("MSSerial_PortName instance");
+                    Console.WriteLine("-----------------------------------");
+                    Console.WriteLine("PortName: {0}", queryObj["PortName"]);
+
+                    //If the serial port's instance name contains USB 
+                    //it must be a USB to serial device
+                    if (queryObj["InstanceName"].ToString().Contains("USB"))
+                    {
+                        Console.WriteLine(queryObj["PortName"] + "is a USB to SERIAL adapter / converter");
+                        namePort = (string)queryObj["PortName"];
+
+                        return namePort;
+
+                    }
+                }
+            }
+            catch (ManagementException e)
+            {
+                //MessageBox.Show("An error occurred while querying for WMI data: " + e.Message);
+                namePort = "";
+            }
+
+            return namePort;
+        }
+
         public static void SetupSerial()
         {
             StringComparer stringComparer = StringComparer.OrdinalIgnoreCase;
@@ -214,6 +259,7 @@ namespace PanicButtonSerial
             _serialPort = new SerialPort();
 
             string PortName = SerialPort.GetPortNames()[0]; // get the first free com port
+            PortName = EnumPorts();
  
             _serialPort.PortName = PortName;
             _serialPort.BaudRate = 9600;
